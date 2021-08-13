@@ -48,7 +48,7 @@ module Helper
 
   def count_matched_value_not_pos(target_arr, compare_arr)
     temp_compare_arr = compare_arr.clone
-    target_arr.reject.with_index{ |_e, i| target_arr[i] == compare_arr[i] }.reduce(0) do |a, v|
+    target_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }.reduce(0) do |a, v|
       index = temp_compare_arr.index v
       unless index.nil?
         temp_compare_arr.delete_at index
@@ -56,7 +56,7 @@ module Helper
       end
       a
     end
-  end 
+  end
 end
 
 module Mastermind
@@ -97,8 +97,6 @@ module Mastermind
   end
 
   class ComputerPlayer < Player
-
-
     def initialize
       super('Computer')
     end
@@ -122,14 +120,13 @@ module Mastermind
     #   self.code = player.create_secret_code
     # end
 
-
     # return num of match_pos_only and match_value_not_pos as {black_pegs, white_pegs}
     def give_feedback(guess_code)
       #   black_pegs, white_pegs = code.compare_with(guess_code)
       #   { black_pegs: black_pegs, white_pegs: white_pegs }
       count_matched_pos_only = Helper.count_matched_pos_only(guess_code, code)
       count_matched_value_not_pos = Helper.count_matched_value_not_pos(guess_code, code)
-      {black_pegs: count_matched_pos_only, white_pegs: count_matched_value_not_pos}
+      { black_pegs: count_matched_pos_only, white_pegs: count_matched_value_not_pos }
     end
 
     private
@@ -142,14 +139,15 @@ module Mastermind
   end
 
   class CodeBreaker
-    attr_accessor :player
+    attr_accessor :player, :game
 
     def initialize(player)
       @player = player
+      @game = nil
     end
 
     def give_guess_code
-      @player.give_guess_code
+      @player.give_guess_code(game.guess_history)
     end
   end
 end
