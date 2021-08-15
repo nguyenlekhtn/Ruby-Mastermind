@@ -56,19 +56,20 @@ module ArrayCompare
   end
 
   def count_matched_value_not_pos(target_arr, compare_arr)
-    temp_compare_arr = compare_arr.clone
-    target_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }.reduce(0) do |a, v|
-      index = temp_compare_arr.index v
-      unless index.nil?
-        temp_compare_arr.delete_at index
-        return a + 1
+    not_matched_compare_arr = compare_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+    not_matched_target_arr = target_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+    # require 'pry-byebug'; binding.pry
+    not_matched_target_arr.reduce(0) do |a, v|
+      index = not_matched_compare_arr.index v
+      if index
+        not_matched_compare_arr.delete_at index
+        a + 1
+      else
+        a
       end
-      a
     end
   end
 end
-
-
 
 module Mastermind
   CODE_SIZE = 4
@@ -90,7 +91,6 @@ module Mastermind
   #     elements.clone
   #   end
 
-    
   # end
 
   # class Player
@@ -98,8 +98,6 @@ module Mastermind
   #     @name = name
   #   end
   # end
-
-  
 
   class CodeMaker
     def initialize
@@ -135,7 +133,7 @@ module Mastermind
       loop do
         code = gets.chomp
         Helper.log_debug "#{__method__} guess code input: #{code}"
-        break if code.match(/\d{4}/)
+        break if code.match(/[1-#{COLOR_NUM}]{4}/)
 
         print 'Invalid code, type again: '
       end
@@ -144,10 +142,14 @@ module Mastermind
   end
 
   class CodeMakerAI < CodeMaker
-    def create_secret_code
-      @code = *(1..CODE_SIZE).map { rand(0...COLOR_NUM).to_s }
+    def create_secret_code(code = nil)
+      unless code.nil?
+        @code = code.to_s.split('')
+      else
+        @code = (1..CODE_SIZE).map { rand(1..COLOR_NUM).to_s }
+      end
       puts 'CodeMaker created secret code'
-      puts @code.to_s
+      puts @code.join()
     end
   end
 
@@ -164,20 +166,20 @@ module Mastermind
 
     def play
       # require 'pry-byebug'; binding.pry
-      code_maker.create_secret_code
-      while turn < TURNS
-        # require 'pry-byebug'; binding.pry
+      code_maker.create_secret_code 1234
+      while turn <= TURNS
+        puts "\nTurn #{turn}"
         place_guess
-        require 'pry-byebug'; binding.pry
         if code_matched?
           puts 'Codebreaker won'
           return
-        elsif turn == TURNS
+        end
+        if turn == TURNS
           puts 'Codemaker won'
           return
-        else
-          place_feedback
         end
+        place_feedback
+        @turn += 1
       end
       puts 'Codemaker won'
     end
@@ -188,8 +190,15 @@ module Mastermind
     attr_reader :code_breaker, :code_maker
 
     def print_board
-      (1..turn).each do |i|
-        puts "Turn #{turn}, Guess attempt: #{guess_attemps[i - 1]}, feedback: #{feedback_log[i - 1]}"
+      if turn == 1
+        puts 'First attempt: '
+      else
+        puts 'Board: '
+        (1...turn).each do |i|
+          black_pegs = feedback_log[i - 1][:black_pegs]
+          white_pegs = feedback_log[i - 1][:white_pegs]
+          puts "Turn #{i}, Guess attempt: #{guess_attemps[i - 1].join('')}, black: #{black_pegs} - white: #{white_pegs}"
+        end
       end
     end
 
@@ -204,6 +213,7 @@ module Mastermind
       feedback = code_maker.feedback(guess_attemps[turn - 1])
       log_debug "#{__method__} feedback: #{feedback}"
       feedback_log[turn - 1] = feedback
+      puts "Feedback: black: #{feedback[:black_pegs]} - white: #{feedback[:white_pegs]}"
     end
 
     def code_matched?
