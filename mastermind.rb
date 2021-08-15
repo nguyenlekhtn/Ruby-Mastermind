@@ -42,6 +42,15 @@ module Helper
   #   count
   # end
 
+  DEBUG = false
+
+  def log_debug(message)
+    puts "#{self}: #{message}" if DEBUG
+  end
+  module_function :log_debug
+end
+
+module ArrayCompare
   def count_matched_pos_only(target_arr, compare_arr)
     target_arr.filter.with_index { |_e, i| target_arr[i] == compare_arr[i] }.length
   end
@@ -59,10 +68,12 @@ module Helper
   end
 end
 
+
+
 module Mastermind
   CODE_SIZE = 4
+  COLOR_NUM = 6
   TURNS = 12
-  DEBUG = false
 
   # 4 code pegs class
   # class Code
@@ -79,18 +90,7 @@ module Mastermind
   #     elements.clone
   #   end
 
-  #   # return [correct_both, correct_value_not_position]
-  #   def compare_with(guess_code)
-  #     my_elements = elements
-  #     guess_elements = guess_code.elements
-  #     matched_position_indexes = Helper.get_match_pos_value_indexes
-  #     filter_my_elements = my_elements.clone
-  #     filter_guess_elements = guess_elements.clone
-  #     filter_guess_elements, filter_my_elements = Helper.delete_with_index(matched_position_indexes,
-  #                                                                          [filter_guess_elements, filter_my_elements])
-  #     match_value_count = Helper.match_value(filter_my_elements, filter_guess_elements)
-  #     [matched_position_indexes.length, match_value_count]
-  #   end
+    
   # end
 
   # class Player
@@ -99,33 +99,25 @@ module Mastermind
   #   end
   # end
 
-  def log(things)
-    puts things if DEBUG
-  end
+  
 
   class CodeMaker
     def initialize
       @code = []
     end
 
+    include ArrayCompare
+
     def feedback(guess_code)
       #   black_pegs, white_pegs = code.compare_with(guess_code)
       #   { black_pegs: black_pegs, white_pegs: white_pegs }
-      count_matched_pos_only = Helper.count_matched_pos_only(guess_code, code)
-      count_matched_value_not_pos = Helper.count_matched_value_not_pos(guess_code, code)
+      count_matched_pos_only = count_matched_pos_only(guess_code, @code)
+      count_matched_value_not_pos = count_matched_value_not_pos(guess_code, @code)
       { black_pegs: count_matched_pos_only, white_pegs: count_matched_value_not_pos }
     end
 
     def match_secret_code?(guess_code)
-      count_matched_pos_only(code, guess_code).length == CODE_SIZE
-    end
-
-    private
-
-    attr_reader :code
-
-    def code=(code)
-      @code = code
+      count_matched_pos_only(@code, guess_code) == CODE_SIZE
     end
   end
 
@@ -138,28 +130,29 @@ module Mastermind
 
   class CodeBreakerHuman < CodeBreaker
     def guess_code
+      code = 1111
       print 'Put your guess code (1122): '
       loop do
         code = gets.chomp
-        Mastermind.log "#{__method__} guess code input: #{code}"
+        Helper.log_debug "#{__method__} guess code input: #{code}"
         break if code.match(/\d{4}/)
 
         print 'Invalid code, type again: '
       end
-      code
+      code.split('')
     end
   end
 
   class CodeMakerAI < CodeMaker
     def create_secret_code
-      code = [1..CODE_SIZE].map { rand(0...CODE_SIZE) }
+      @code = *(1..CODE_SIZE).map { rand(0...COLOR_NUM).to_s }
       puts 'CodeMaker created secret code'
+      puts @code.to_s
     end
   end
 
-
-
   class Game
+    include Helper
 
     def initialize
       @code_breaker = CodeBreakerHuman.new
@@ -170,10 +163,12 @@ module Mastermind
     end
 
     def play
+      # require 'pry-byebug'; binding.pry
       code_maker.create_secret_code
       while turn < TURNS
-
-        place_guess {}
+        # require 'pry-byebug'; binding.pry
+        place_guess
+        require 'pry-byebug'; binding.pry
         if code_matched?
           puts 'Codebreaker won'
           return
@@ -198,22 +193,21 @@ module Mastermind
       end
     end
 
-
     def place_guess
       print_board
       guess_code = code_breaker.guess_code
-      log "#{__method__} guess: #{guess}"
+      Helper.log_debug "#{__method__} guess_code: #{guess_code}"
       guess_attemps[turn - 1] = guess_code
     end
 
     def place_feedback
-      feedback = code_maker.feedback(guess_code)
-      log "#{__method__} feedback: #{feedback}"
+      feedback = code_maker.feedback(guess_attemps[turn - 1])
+      log_debug "#{__method__} feedback: #{feedback}"
       feedback_log[turn - 1] = feedback
     end
 
     def code_matched?
-      code_maker.match_secret_code? guess_attemps[turn]
+      code_maker.match_secret_code? guess_attemps[turn - 1]
     end
   end
 end
