@@ -8,40 +8,6 @@ module Enumerable
 end
 
 module Helper
-  # vod => arr_of_matched_idx
-  # def get_match_pos_value_indexes(a_arr, b_arr)
-  #   arr_of_matched_idx = []
-  #   a_arr.each_with_index do |e, i|
-  #     arr_of_matched_idx.push(i) if e == b_arr[i]
-  #   end
-  #   arr_of_matched_idx
-  # end
-
-  # def delete_with_index(idx_arr, arr_list)
-  #   idx_arr.each do |idx|
-  #     arr_list.each do |arr|
-  #       arr.delete_at(idx)
-  #     end
-  #   end
-
-  #   arr_list
-  # end
-
-  # return num of element guess_arr extacly match value of my_arr
-  # def match_value(my_arr, guess_arr)
-  #   count = 0
-  #   counted_my_arr = my_arr.count_by { |x| x }
-  #   counted_guess_arr = guess_arr.count_by { |x| x }
-  #   counted_guess_arr.each do |k, _v|
-  #     count += [counted_my_arr[k], counted_guess_arr].min if counted_my_arr.key? k
-  #   end
-  #   # intersection 2 hash to find min
-  #   # counted_my_arr.select { |k, _v| counted_guess_arr.key? k }
-  #   #               .map { |k, v| [k, [v, counted_guess_arr[k]].min] }
-  #   #               .to_h
-  #   count
-  # end
-
   DEBUG = false
 
   def log_debug(message)
@@ -51,73 +17,71 @@ module Helper
 end
 
 module ArrayCompare
-  def count_matched_pos_only(target_arr, compare_arr)
-    target_arr.filter.with_index { |_e, i| target_arr[i] == compare_arr[i] }.length
-  end
+  # extend self
 
-  def count_matched_value_not_pos(target_arr, compare_arr)
+  # def count_matched_pos_only(target_arr, compare_arr)
+  #   target_arr.filter.with_index { |_e, i| target_arr[i] == compare_arr[i] }.length
+  # end
+
+  # def count_matched_value_not_pos(target_arr, compare_arr)
+  #   not_matched_compare_arr = compare_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+  #   not_matched_target_arr = target_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+  #   # require 'pry-byebug'; binding.pry
+  #   not_matched_target_arr.reduce(0) do |a, v|
+  #     index = not_matched_compare_arr.index v
+  #     if index
+  #       not_matched_compare_arr.delete_at index
+  #       a + 1
+  #     else
+  #       a
+  #     end
+  #   end
+  # end
+
+  def not_match_pos(target_arr, compare_arr)
     not_matched_compare_arr = compare_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
     not_matched_target_arr = target_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+    [not_matched_target_arr, not_matched_compare_arr]
+  end
+
+  def match_value_idx_arr(target_arr, compare_arr)
     # require 'pry-byebug'; binding.pry
-    not_matched_target_arr.reduce(0) do |a, v|
-      index = not_matched_compare_arr.index v
-      if index
-        not_matched_compare_arr.delete_at index
-        a + 1
-      else
-        a
+    compare_arr.each_with_object([]).with_index do |(c_value, arr), idx|
+      target_arr.each do |t_value|
+        arr << idx if c_value == t_value && !arr.include?(idx)
       end
     end
   end
+
+  def count_matched_pos_only(target_arr, compare_arr)
+    target_arr.length - not_match_pos(target_arr, compare_arr)[0].length
+  end
+
+  def count_matched_value_not_pos(target_arr, compare_arr)
+    match_value_idx_arr(*not_match_pos(target_arr, compare_arr)).length
+  end
+
+  # def compare_arr(a_arr, b_arr)
+  #   match_pos_indexes = []
+  #   match_value_indexes = []
+  #   a_arr.each_with_index do |a, a_idx|
+  #     b_arr.each_with_index do |b, b_idx|
+  #       if a == b && a_idx == b_idx
+  #         match_pos_indexes << b_idx
+  #       elsif a == b
+  #         match_value_indexes << b_idx unless match_pos_indexes.include? b_idx
+  #       end
+  #     end
+  #   end
+  #   { match_pos_indexes: match_pos_indexes, match_value_indexes: match_value_indexes }
+  # end
+  module_function :count_matched_pos_only, :not_match_pos, :match_value_idx_arr, :count_matched_value_not_pos
 end
 
 module Mastermind
   CODE_SIZE = 4
   COLOR_NUM = 6
   TURNS = 12
-
-  # 4 code pegs class
-  # class Code
-  #   def self.create_random_code
-  #     random_4_nums = [1..CODE_SIZE].map { rand(0...CODE_SIZE) }
-  #     Code.new(*random_4_nums)
-  #   end
-
-  #   def initialize(num1, num2, num3, num4)
-  #     @elements = [num1, num2, num3, num4]
-  #   end
-
-  #   def elements
-  #     elements.clone
-  #   end
-
-  # end
-
-  # class Player
-  #   def initialize(name)
-  #     @name = name
-  #   end
-  # end
-
-  class CodeMaker
-    def initialize
-      @code = []
-    end
-
-    include ArrayCompare
-
-    def feedback(guess_code)
-      #   black_pegs, white_pegs = code.compare_with(guess_code)
-      #   { black_pegs: black_pegs, white_pegs: white_pegs }
-      count_matched_pos_only = count_matched_pos_only(guess_code, @code)
-      count_matched_value_not_pos = count_matched_value_not_pos(guess_code, @code)
-      { black_pegs: count_matched_pos_only, white_pegs: count_matched_value_not_pos }
-    end
-
-    def match_secret_code?(guess_code)
-      count_matched_pos_only(@code, guess_code) == CODE_SIZE
-    end
-  end
 
   class CodeBreaker
     def initialize; end
@@ -141,17 +105,85 @@ module Mastermind
     end
   end
 
-  class CodeMakerAI < CodeMaker
-    def create_secret_code(code = nil)
-      unless code.nil?
-        @code = code.to_s.split('')
-      else
-        @code = (1..CODE_SIZE).map { rand(1..COLOR_NUM).to_s }
+  # CodeBreaker - Compuer Player
+  class CodeBreakerAI < CodeBreaker
+    # last guess info: match_pos_hash, math_color_arr
+    # match_pos_hash: pos:color
+    def guess_with_hint(last_guess_info)
+      match_pos_hash = last_guess_info[:match_pos_arr]
+      match_color_arr = last_guess_info[:match_pos_arr]
+      guess_code = Array(CODE_SIZE)
+      guess_code.each_with_index do |_e, i|
+        guess_code[i] = if match_pos_hash.keys.include? i
+                          match_pos_hash[i]
+                        elsif !match_color_arr.empty?
+                          match_color_arr.pop
+                        else
+                          Math.rand(1..COLOR_NUM).to_s
+                        end
       end
-      puts 'CodeMaker created secret code'
-      puts @code.join()
+      guess_code
+    end
+
+    def guess_code(last_guess_info)
+      puts 'AI is guessing'
+      if turn.zero?
+        (1..CODE_SIZE).map { rand(1..COLOR_NUM).to_s }
+      else
+        guess_with_hint last_guess_info
+      end
     end
   end
+
+  class CodeMaker
+    def initialize
+      @code = []
+    end
+
+    include ArrayCompare
+
+    def feedback(guess_code)
+      #   black_pegs, white_pegs = code.compare_with(guess_code)
+      #   { black_pegs: black_pegs, white_pegs: white_pegs }
+      count_matched_pos_only = count_matched_pos_only(guess_code, @code)
+      count_matched_value_not_pos = count_matched_value_not_pos(guess_code, @code)
+      { black_pegs: count_matched_pos_only, white_pegs: count_matched_value_not_pos }
+    end
+
+    def match_secret_code?(guess_code)
+      count_matched_pos_only(@code, guess_code) == CODE_SIZE
+    end
+  end
+
+  class CodeMakerAI < CodeMaker
+    def create_secret_code(code = nil)
+      @code = if code.nil?
+                (1..CODE_SIZE).map { rand(1..COLOR_NUM).to_s }
+              else
+                code.to_s.split('')
+              end
+      puts 'CodeMaker created secret code'
+      puts @code.join
+    end
+  end
+
+  class CodeMakerHuman < CodeMaker
+    def hint guess_code
+      match_pos_hash = Hash.new(0)
+      guess_code.each_with_index do |_e, idx|
+        if guess_code[idx] == @code[idx]
+          match_pos_hash[idx] = guess_code[idx]
+        else
+
+        end
+      end
+    end
+  end
+
+          
+
+
+
 
   class Game
     include Helper
@@ -222,5 +254,8 @@ module Mastermind
   end
 end
 
-new_game = Mastermind::Game.new
-new_game.play
+# new_game = Mastermind::Game.new
+# new_game.play
+a = [4, 1, 4, 1]
+b = [4, 0, 1, 4]
+p ArrayCompare.count_matched_value_not_pos(a, b)
