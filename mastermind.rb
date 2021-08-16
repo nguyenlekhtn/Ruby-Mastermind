@@ -110,19 +110,7 @@ module Mastermind
     # last guess info: match_pos_hash, math_color_arr
     # match_pos_hash: pos:color
     def guess_with_hint(last_guess_info)
-      match_pos_hash = last_guess_info[:match_pos_arr]
-      match_color_arr = last_guess_info[:match_pos_arr]
-      guess_code = Array(CODE_SIZE)
-      guess_code.each_with_index do |_e, i|
-        guess_code[i] = if match_pos_hash.keys.include? i
-                          match_pos_hash[i]
-                        elsif !match_color_arr.empty?
-                          match_color_arr.pop
-                        else
-                          Math.rand(1..COLOR_NUM).to_s
-                        end
-      end
-      guess_code
+      
     end
 
     def guess_code(last_guess_info)
@@ -179,11 +167,6 @@ module Mastermind
       end
     end
   end
-
-          
-
-
-
 
   class Game
     include Helper
@@ -254,8 +237,8 @@ module Mastermind
   end
 end
 
-# new_game = Mastermind::Game.new
-# new_game.play
-a = [4, 1, 4, 1]
-b = [4, 0, 1, 4]
-p ArrayCompare.count_matched_value_not_pos(a, b)
+new_game = Mastermind::Game.new
+new_game.play
+# a = [4, 1, 4, 1]
+# b = [4, 0, 1, 4]
+# p ArrayCompare.count_matched_value_not_pos(a, b)
