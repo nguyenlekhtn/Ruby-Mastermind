@@ -1,0 +1,341 @@
+# frozen_string_literal: true
+module Enumerable
+  def count_by(&block)
+    list = group_by(&block).map { |key, items| [key, items.count] }.sort_by(&:last)
+    Hash[list]
+  end
+end
+
+module Helper
+  DEBUG = true
+  def self.log_debug(message)
+    p message
+  end
+end
+
+module ArrayCompare
+  def match_pos_indexes(target_arr, compare_arr)
+    target_arr.each_index.select { |i| target_arr[i] == compare_arr[i] }
+  end
+
+  def not_match_pos_indexes(target_arr, compare_arr)
+    [*0...target_arr.length] - match_pos_indexes(target_arr, compare_arr)
+  end
+
+  # map element matched between 2 array to nil
+  def matched_pos_to_nil(target_arr, compare_arr)
+    matched_idx = match_pos_indexes(target_arr, compare_arr)
+    to_nil = proc { |v, i| (matched_idx.include? i) ? nil : v }
+    new_target_arr = target_arr.map.with_index { |v, i| to_nil.call(v, i) }
+    new_compare_arr = compare_arr.map.with_index { |v, i| to_nil.call(v, i) }
+    [new_target_arr, new_compare_arr]
+  end
+
+  # return parameter arrays but exclude matching element between them
+  # def not_match_pos(target_arr, compare_arr)
+  #   not_matched_compare_arr = compare_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+  #   not_matched_target_arr = target_arr.reject.with_index { |_e, i| target_arr[i] == compare_arr[i] }
+  #   [not_matched_target_arr, not_matched_compare_arr]
+  # end
+
+  def match_value_idx_arr(target_arr, compare_arr)
+    picked_idx_in_target = []
+    compare_arr.each_with_object([]).with_index do |(c_value, arr), c_idx|
+      target_arr.each_with_index do |t_value, t_idx|
+        if c_value == t_value && !c_value.nil? && !picked_idx_in_target.include?(t_idx)
+          arr << c_idx 
+          picked_idx_in_target << t_idx
+        end
+      end
+    end
+  end
+
+  def match_value_only_idx_arr(target_arr, compare_arr)
+    match_value_idx_arr(*matched_pos_to_nil(target_arr, compare_arr))
+  end
+
+  def count_matched_pos_only(target_arr, compare_arr)
+    # target_arr.length - not_match_pos(target_arr, compare_arr)[0].length
+    match_pos_indexes(target_arr, compare_arr).length
+  end
+
+  def count_matched_value_not_pos(target_arr, compare_arr)
+    match_value_only_idx_arr(target_arr, compare_arr).length
+  end
+
+  # def compare_arr(a_arr, b_arr)
+  #   match_pos_indexes = []
+  #   match_value_indexes = []
+  #   a_arr.each_with_index do |a, a_idx|
+  #     b_arr.each_with_index do |b, b_idx|
+  #       if a == b && a_idx == b_idx
+  #         match_pos_indexes << b_idx
+  #       elsif a == b
+  #         match_value_indexes << b_idx unless match_pos_indexes.include? b_idx
+  #       end
+  #     end
+  #   end
+  #   { match_pos_indexes: match_pos_indexes, match_value_indexes: match_value_indexes }
+  # end
+  module_function :count_matched_pos_only, :matched_pos_to_nil, :match_value_idx_arr, :count_matched_value_not_pos, :match_pos_indexes, :match_value_only_idx_arr, :not_match_pos_indexes
+end
+
+module Mastermind
+  CODE_SIZE = 4
+  COLOR_NUM = 6
+  TURNS = 12
+  PATTERN = /^[1-#{COLOR_NUM}]{#{CODE_SIZE}}$/
+
+  def self.generate_random_code
+    (1..CODE_SIZE).map { generate_random_color }
+  end
+
+  def self.generate_random_color
+    rand(1..COLOR_NUM).to_s
+  end
+
+  class CodeBreaker
+    def initialize
+      @guess_code = []
+    end
+
+    attr_reader :guess_code
+  end
+
+  class CodeBreakerHuman < CodeBreaker
+    def guess
+      print 'Put your guess code (1122): '
+      loop do
+        code = gets.chomp
+        if code.match(PATTERN)
+          @guess_code = code.split('')
+          break
+        else
+          print 'Invalid code, type again: '
+        end
+      end
+      @guess_code
+    end
+  end
+
+  # CodeBreaker - Compuer Player
+  class CodeBreakerAI < CodeBreaker
+    # last guess info: match_pos_hash, math_color_arr
+    # match_pos_hash: pos:color
+    # def guess_with_hint(last_guess_info)
+    #   match_pos_hash = last_guess_info[:match_pos_arr]
+    #   match_color_arr = last_guess_info[:match_pos_arr]
+    #   guess_code = Array(CODE_SIZE)
+    #   guess_code.each_with_index do |_e, i|
+    #     guess_code[i] = if match_pos_hash.keys.include? i
+    #                       match_pos_hash[i]
+    #                     elsif !match_color_arr.empty?
+    #                       match_color_arr.pop
+    #                     else
+    #                       Math.rand(1..COLOR_NUM).to_s
+    #                     end
+    #   end
+    #   guess_code
+    # end
+
+    def guess_with_hint(hint)
+      hint => {match_pos_indexes_arr:, match_value_set:}
+      # guess_code.map.with_index do |value, idx|
+      #   if match_pos_indexes_arr.include? idx
+      #     value
+      #   elsif !match_value_set.empty?
+      #     match_value_set.pop
+      #   else
+      #     Mastermind.generate_random_color
+      #   end
+      # end
+      new_guess_code = Array(4) { nil }
+      not_match_pos_indexes = [*0...CODE_SIZE] - match_pos_indexes_arr
+      match_pos_indexes_arr.each { |i| new_guess_code[i] = guess_code[i] }
+      match_value_set.each do |value|
+      end
+        
+    end
+
+    def guess(last_guess_info = nil)
+      puts 'AI is guessing'
+      if last_guess_info
+        @guess_code = guess_with_hint last_guess_info
+      else
+        @guess_code = Mastermind.generate_random_code
+      end
+      guess_code
+    end
+  end
+
+  class CodeMaker
+    def initialize
+      @code = []
+    end
+
+    include ArrayCompare
+
+    def feedback(guess_code)
+      #   black_pegs, white_pegs = code.compare_with(guess_code)
+      #   { black_pegs: black_pegs, white_pegs: white_pegs }
+      count_matched_pos_only = count_matched_pos_only(guess_code, @code)
+      count_matched_value_not_pos = count_matched_value_not_pos(guess_code, @code)
+      { black_pegs: count_matched_pos_only, white_pegs: count_matched_value_not_pos }
+    end
+
+    def match_secret_code?(guess_code)
+      count_matched_pos_only(@code, guess_code) == CODE_SIZE
+    end
+  end
+
+  class CodeMakerAI < CodeMaker
+    def create_secret_code(code = nil)
+      @code = if code.nil?
+                Mastermind.generate_random_color
+              else
+                code.to_s.split('')
+              end
+      puts 'CodeMaker created secret code'
+      puts @code.join
+    end
+  end
+
+  # CodeMaker - Human player
+  class CodeMakerHuman < CodeMaker
+    # give {mach_pos_indexes_arr, match_value_set}
+    # def hint guess_code
+    #   match_pos_hash = Hash.new(0)
+    #   guess_code.each_with_index do |_e, idx|
+    #     if guess_code[idx] == @code[idx]
+    #       match_pos_hash[idx] = guess_code[idx]
+    #     else
+
+    #     end
+    #   end
+    # end
+    def hint(guess_code = nil)
+      return nil if guess_code.nil?
+
+      match_pos_indexes_arr = ArrayCompare.match_pos_indexes(@code, guess_code)
+      match_value_set = @code.values_at(*ArrayCompare.match_value_only_idx_arr(guess_code, @code)).uniq
+      { match_pos_indexes_arr: match_pos_indexes_arr, match_value_set: match_value_set }
+    end
+
+    def create_secret_code
+      print "Enter your secret code: "
+      loop do
+        input = gets.chomp
+        if input.match(PATTERN)
+          @code = input.split('')
+          break
+        else
+          print 'Invalid code format, type again: '
+        end
+      end
+    end
+  end
+
+  class Game
+    def initialize
+      @guess_attempts = Array.new(TURNS) { [] }
+      @feedback_log = Array.new(TURNS) { nil }
+      @turn = 1
+    end
+    attr_accessor :code_breaker, :code_maker, :guess_attempts, :turn, :feedback_log
+
+    def select_role
+      print 'Do you want to be codemaker or codebeaker (1: codemaker - 2: codebreaker)? '
+      choice = gets.chomp
+      case choice
+      when '1'
+        @code_breaker = CodeBreakerAI.new
+        @code_maker = CodeMakerHuman.new
+        nil
+      when '2'
+        @code_breaker = CodeBreakerHuman.new
+        @code_maker = CodeMakerAI.new
+        nil
+      else
+        select_role
+      end
+    end
+
+    def play
+      select_role
+      code_maker.create_secret_code
+      while turn <= TURNS
+        puts "\nTurn #{turn}"
+        place_guess
+        if code_matched?
+          puts 'Codebreaker won'
+          return
+        end
+        if turn == TURNS
+          puts 'Codemaker won'
+          return
+        end
+        place_feedback
+        @turn += 1
+      end
+      puts 'Codemaker won'
+    end
+
+    private
+
+    def print_board
+      return unless turn > 1
+
+      puts 'Board: '
+      (1...turn).each do |i|
+        black_pegs = feedback_log[i - 1][:black_pegs]
+        white_pegs = feedback_log[i - 1][:white_pegs]
+        puts "Turn #{i}, Guess attempt: #{guess_attempts[i - 1].join('')}, black: #{black_pegs} - white: #{white_pegs}"
+      end
+    end
+
+    # def place_guess
+    #   guess_code = code_breaker.guess_code
+    #   puts "Code breaker guessed: #{guess_code.join('')}"
+    #   guess_attempts[turn - 1] = guess_code
+    # end
+
+    def place_guess
+
+      # print_board
+
+      # No hint
+      if turn == 1 || (code_breaker.is_a? CodeBreakerHuman)
+        guess_code = code_breaker.guess
+      else
+        hint = code_maker.hint guess_attempts[turn - 2]
+        Helper.log_debug "hint: #{hint}"
+        guess_code = code_breaker.guess hint
+      end
+      puts "Code breaker guessed: #{guess_code.join('')}"
+      guess_attempts[turn - 1] = guess_code
+    end
+
+    def place_feedback
+      feedback = code_maker.feedback(guess_attempts[turn - 1])
+      feedback_log[turn - 1] = feedback
+      puts "Feedback: black: #{feedback[:black_pegs]} - white: #{feedback[:white_pegs]}"
+    end
+
+    def code_matched?
+      code_maker.match_secret_code? guess_attempts[turn - 1]
+    end
+  end
+end
+
+# new_game = Mastermind::Game.new
+# new_game.play
+# a = ["4", "2", "1", "6"]
+# b = ["1", "1", "2", "2"]
+# p ArrayCompare.count_matched_value_not_pos(a, b)
+code = [1, 1, 2, 2]
+guess_code = [1, 2, 2, 1]
+# match_pos_indexes_arr = ArrayCompare.match_pos_indexes(code, guess_code)
+# match_value_set = code.values_at(*ArrayCompare.match_value_only_idx_arr(guess_code, code)).uniq
+# result = { match_pos_indexes_arr: match_pos_indexes_arr, match_value_set: match_value_set }
+# p result
+p ArrayCompare.not_match_pos_indexes(code, guess_code)
