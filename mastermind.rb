@@ -13,8 +13,8 @@ module Mastermind
       @history = Array.new(TURNS) { { guess_code: nil, feedback: nil } }
       @valid_codes = []
       @current_turn = 0
-      @codemaker = CodemakerAI.new self
-      @codebreaker = CodebreakerHuman.new
+      # @codemaker = CodemakerAI.new
+      # @codebreaker = CodebreakerHuman.new
     end
 
     attr_reader :pegs, :colors, :valid_codes, :codebreaker, :codemaker, :current_turn, :history
@@ -47,7 +47,29 @@ module Mastermind
       puts "#{codemaker.name} created code"
     end
 
+    def set_role
+      print 'Do you want to be codemaker? (y/n): '
+      loop do
+        answer = gets.chomp
+        flag = false
+        case answer
+        when 'y'
+          @codemaker = Codemaker.new(Human.new)
+          @codebreaker = Codebreaker.new(AI.new, self)
+          flag = true
+        when 'n'
+          @codemaker = Codemaker.new(AI.new)
+          @codebreaker = Codebreaker.new(Human.new, self)
+          flag = true
+        else
+          puts 'Invalid choice, choose again: '
+        end
+        break if flag
+      end
+    end
+
     def start
+      set_role
       create_secret_code_phase
       result = nil
       TURNS.times do |turn_i|
@@ -62,57 +84,74 @@ module Mastermind
   end
 
   class Codemaker
-    def initialize(game)
+    def initialize(entity)
       @secret_code = nil
-      @game = game
+      @entity = entity
     end
 
-    attr_reader :secret_code, :game
+    attr_reader :secret_code, :entity
 
     def give_feedback(guess_code)
       # guess_code = game.last_guess
       (secret_code.compare_with guess_code) => {count_match_exactly:, count_wrong_pos:}
       { black_num: count_match_exactly, white_num: count_wrong_pos }
     end
-  end
-
-  class CodemakerHuman < Codemaker
-    def initialize(game)
-      super
-      @name = 'Human'
-    end
 
     def create_secret_code
-      print 'Enter secret code: '
-      @secret_code = Code.from_input
+      @secret_code = entity.set_code
+    end
+
+    def name
+      entity.name
     end
   end
 
-  class CodemakerAI < Codemaker
-    def initialize(game)
-      super
-      @name = 'AI'
-    end
-
-    attr_reader :name
-
-    def create_secret_code
-      # @secret_code = Code.create_random_code
-      @secret_code = Code.new(*%w[1 2 3 4])
-      puts "Secret code: #{secret_code}"
-    end
-  end
-
-  class CodebreakerHuman
+  class Human
     def initialize
       @name = 'Human'
     end
 
     attr_reader :name
 
-    def guess
-      print 'Input your guess: '
+    def set_code
+      print 'Enter secret code: '
       Code.from_input
+    end
+
+    def guess
+      print 'Enter your guess: '
+      Code.from_input
+    end
+  end
+
+  class AI
+    def initialize
+      @name = 'AI'
+    end
+
+    attr_reader :name
+
+    def set_code
+      Code.create_random_code
+      # @secret_code = Code.new(*%w[1 2 3 4])
+      # puts "Secret code: #{secret_code}"
+    end
+  end
+
+  class Codebreaker
+    def initialize(entity, game)
+      @entity = entity
+      @game = game
+    end
+
+    attr_reader :entity, :game
+
+    def guess
+      entity.guess
+    end
+
+    def name
+      entity.name
     end
   end
 
