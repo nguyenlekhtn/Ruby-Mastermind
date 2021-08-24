@@ -29,13 +29,17 @@ module Mastermind
     end
 
     def play_turn(turn_i)
+      puts "Turn #{turn_i + 1}"
+      # require 'pry-byebug'; binding.pry
       guess_code = @codebreaker.guess
+
       puts "#{codebreaker.name} guessed #{guess_code}"
       (@codemaker.give_feedback guess_code) => {black_num:, white_num:}
       puts "#{codemaker.name}'s feedback: B#{black_num}W#{white_num}"
-      return true if black_num == pegs
+      return 'found' if black_num == PEGS
 
       add_history(turn_i, guess_code, black_num, white_num)
+      puts "\n"
     end
 
     def create_secret_code_phase
@@ -45,13 +49,14 @@ module Mastermind
 
     def start
       create_secret_code_phase
-      result = false
+      result = nil
       TURNS.times do |turn_i|
+        require 'pry-byebug'; binding.pry
         @current_turn = turn_i
         result = play_turn turn_i
-        break if result
+        break if result == 'found'
       end
-      if result then puts "#{codebreaker.name} won"
+      if result == 'found' then puts "#{codebreaker.name} won"
       else puts "#{codemaker.name} won"
       end
     end
@@ -93,7 +98,8 @@ module Mastermind
     attr_reader :name
 
     def create_secret_code
-      @secret_code = Code.create_random_code
+      # @secret_code = Code.create_random_code
+      @secret_code = Code.new(*%w[1 2 3 4])
       puts "Secret code: #{secret_code}"
     end
   end
@@ -127,6 +133,8 @@ module Mastermind
       loop do
         input = gets.chomp
         break if Code.valid? input
+
+        print 'Invalid format, type again: '
       end
       Code.new(*input.chars)
     end

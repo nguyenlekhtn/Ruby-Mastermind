@@ -13,12 +13,12 @@ module Enumerable
   end
 end
 
-def count_matched_value_only(a_arr, b_arr)
-  count_matched_pos(a_arr, b_arr) - count_matched_value(a_arr, b_arr)
-end
+# def count_matched_value_only(a_arr, b_arr)
+#   count_matched_pos(a_arr, b_arr) - count_matched_value(a_arr, b_arr)
+# end
 
 def count_matched_pos(a_arr, b_arr)
-  a_arr.select.with_index { |_value, index| a_arr[index] = b_arr[index] }.length
+  a_arr.select.with_index { |_value, index| a_arr[index] == b_arr[index] }.length
 end
 
 def count_matched_value(a_arr, b_arr)
@@ -27,6 +27,6 @@ def count_matched_value(a_arr, b_arr)
   counted_a.intersection(counted_b).values.sum
 end
 
-def counted_matched_only_value(a_arr, b_arr)
-  count_matched_value(a, b) - count_matched_pos(a_arr, b_arr)
+def count_matched_value_only(a_arr, b_arr)
+  count_matched_value(a_arr, b_arr) - count_matched_pos(a_arr, b_arr)
 end
