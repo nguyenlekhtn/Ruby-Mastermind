@@ -30,3 +30,14 @@ end
 def count_matched_value_only(a_arr, b_arr)
   count_matched_value(a_arr, b_arr) - count_matched_pos(a_arr, b_arr)
 end
+
+# create array of array from [start, ...] to [end, ...]
+def possible_choices(min, max, size)
+  arr = []
+  alpha = Array.new(size) { min }.join.to_i
+  omega = Array.new(size) { max }.join.to_i
+  alpha.upto(omega) do |i|
+    arr << i.to_s
+  end
+  arr.map(&:chars)
+end

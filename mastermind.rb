@@ -106,6 +106,23 @@ module Mastermind
     end
   end
 
+  class Codebreaker
+    def initialize(entity, game)
+      @entity = entity
+      @game = game
+    end
+
+    attr_reader :entity, :game
+
+    def guess
+      entity.guess
+    end
+
+    def name
+      entity.name
+    end
+  end
+
   class Human
     def initialize
       @name = 'Human'
@@ -127,31 +144,25 @@ module Mastermind
   class AI
     def initialize
       @name = 'AI'
+      @game = game
+      @valid_choices = possible_choices(1, COLORS, PEGS)
     end
 
-    attr_reader :name
+    attr_reader :name, :game
 
     def set_code
       Code.create_random_code
       # @secret_code = Code.new(*%w[1 2 3 4])
       # puts "Secret code: #{secret_code}"
     end
-  end
 
-  class Codebreaker
-    def initialize(entity, game)
-      @entity = entity
-      @game = game
-    end
-
-    attr_reader :entity, :game
+    def remove_invalid_choice; end
 
     def guess
-      entity.guess
-    end
+      return Code.create_random_code if game.first_turn?
 
-    def name
-      entity.name
+      remove_invalid_choice
+      select_valid_choice
     end
   end
 
