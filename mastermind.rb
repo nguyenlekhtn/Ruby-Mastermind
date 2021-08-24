@@ -222,6 +222,3 @@ module Mastermind
     end
   end
 end
-
-game = Mastermind::Game.new
-game.start
