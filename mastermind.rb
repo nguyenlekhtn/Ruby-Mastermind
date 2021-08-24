@@ -51,7 +51,6 @@ module Mastermind
       create_secret_code_phase
       result = nil
       TURNS.times do |turn_i|
-        require 'pry-byebug'; binding.pry
         @current_turn = turn_i
         result = play_turn turn_i
         break if result == 'found'
