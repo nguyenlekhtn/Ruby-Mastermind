@@ -10,22 +10,31 @@ module Mastermind
   # Game of mastermind, init with number of pegs and number of colors correspondingly
   class Game
     def initialize
-      @history = Array.new(TURNS) { { guess_code: nil, feedback: nil } }
-      @valid_codes = []
+      # @history = Array.new(TURNS) { { guess_code: nil, feedback: nil } }
+      @history = []
       @current_turn = 0
       # @codemaker = CodemakerAI.new
       # @codebreaker = CodebreakerHuman.new
     end
 
-    attr_reader :pegs, :colors, :valid_codes, :codebreaker, :codemaker, :current_turn, :history
+    attr_reader :pegs, :colors, :codebreaker, :codemaker, :current_turn, :history
 
-    def add_history(turn_i, guess_code, black_num, white_num)
-      @history[turn_i][:guess_code] = guess_code
-      @history[turn_i][:feedback] = { black_num: black_num, white_num: white_num }
+    def add_history(guess_code, black_num, white_num)
+      # @history[turn_i][:guess_code] = guess_code
+      # @history[turn_i][:feedback] = { black_num: black_num, white_num: white_num }
+      @history << { guess_code: guess_code, feedback: { black_num: black_num, white_num: white_num } }
     end
 
     def last_guess
-      history.dig(current_turn, :guess_code)
+      history.dig(-1, :guess_code)
+    end
+
+    def last_feedback
+      history[-1][:feedback]
+    end
+
+    def first_turn?
+      current_turn.zero?
     end
 
     def play_turn(turn_i)
@@ -38,13 +47,13 @@ module Mastermind
       puts "#{codemaker.name}'s feedback: B#{black_num}W#{white_num}"
       return 'found' if black_num == PEGS
 
-      add_history(turn_i, guess_code, black_num, white_num)
+      add_history(guess_code, black_num, white_num)
       puts "\n"
     end
 
     def create_secret_code_phase
       @codemaker.create_secret_code
-      puts "#{codemaker.name} created code"
+      puts "#{codemaker.name} created secret code"
     end
 
     def set_role
@@ -55,11 +64,11 @@ module Mastermind
         case answer
         when 'y'
           @codemaker = Codemaker.new(Human.new)
-          @codebreaker = Codebreaker.new(AI.new, self)
+          @codebreaker = Codebreaker.new(AI.new(self))
           flag = true
         when 'n'
-          @codemaker = Codemaker.new(AI.new)
-          @codebreaker = Codebreaker.new(Human.new, self)
+          @codemaker = Codemaker.new(AI.new(self))
+          @codebreaker = Codebreaker.new(Human.new)
           flag = true
         else
           puts 'Invalid choice, choose again: '
@@ -93,7 +102,7 @@ module Mastermind
 
     def give_feedback(guess_code)
       # guess_code = game.last_guess
-      (secret_code.compare_with guess_code) => {count_match_exactly:, count_wrong_pos:}
+      compare_with(secret_code.pegs, guess_code.pegs) => {count_match_exactly:, count_wrong_pos:}
       { black_num: count_match_exactly, white_num: count_wrong_pos }
     end
 
@@ -107,12 +116,11 @@ module Mastermind
   end
 
   class Codebreaker
-    def initialize(entity, game)
+    def initialize(entity)
       @entity = entity
-      @game = game
     end
 
-    attr_reader :entity, :game
+    attr_reader :entity
 
     def guess
       entity.guess
@@ -142,13 +150,13 @@ module Mastermind
   end
 
   class AI
-    def initialize
+    def initialize(game)
       @name = 'AI'
       @game = game
       @valid_choices = possible_choices(1, COLORS, PEGS)
     end
 
-    attr_reader :name, :game
+    attr_reader :name, :game, :valid_choices
 
     def set_code
       Code.create_random_code
@@ -156,10 +164,23 @@ module Mastermind
       # puts "Secret code: #{secret_code}"
     end
 
-    def remove_invalid_choice; end
+    # choice: Array, guess: Code
+    def receive_same_feedback?(choice, feedback, guess)
+      match_compare?(choice, guess.pegs, feedback.values)
+    end
+
+    def remove_invalid_choice
+      last_feedback = game.last_feedback
+      last_guess = game.last_guess
+      @valid_choices.select! { |choice| receive_same_feedback?(choice, last_feedback, last_guess) }
+    end
+
+    def select_valid_choice
+      Code.new(*valid_choices[0])
+    end
 
     def guess
-      return Code.create_random_code if game.first_turn?
+      return Code.new(*%w[1 1 2 2]) if game.first_turn?
 
       remove_invalid_choice
       select_valid_choice
@@ -195,11 +216,6 @@ module Mastermind
     end
 
     # {count_match_exactly:, count_wrong_pos:}
-    def compare_with(code)
-      count_match_exactly = count_matched_pos(pegs, code.pegs)
-      count_wrong_pos = count_matched_value_only(pegs, code.pegs)
-      { count_match_exactly: count_match_exactly, count_wrong_pos: count_wrong_pos }
-    end
 
     def to_s
       pegs.join

@@ -41,3 +41,14 @@ def possible_choices(min, max, size)
   end
   arr.map(&:chars)
 end
+
+def compare_with(a_rr, b_arr)
+  count_match_exactly = count_matched_pos(a_rr, b_arr)
+  count_wrong_pos = count_matched_value_only(a_rr, b_arr)
+  { count_match_exactly: count_match_exactly, count_wrong_pos: count_wrong_pos }
+end
+
+def match_compare?(a_arr, b_arr, comparasion)
+  compare_with(a_arr, b_arr) => {count_match_exactly:, count_wrong_pos:}
+  count_match_exactly == comparasion[0] && count_wrong_pos == comparasion[1]
+end
