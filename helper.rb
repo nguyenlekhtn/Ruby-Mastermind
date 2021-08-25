@@ -45,6 +45,8 @@ def compare_with(a_rr, b_arr)
 end
 
 def match_compare?(a_arr, b_arr, comparasion)
-  compare_with(a_arr, b_arr) => {count_match_exactly:, count_wrong_pos:}
+  # compare_with(a_arr, b_arr) => {count_match_exactly:, count_wrong_pos:}
+  count_match_exactly = compare_with(a_arr, b_arr)[:count_match_exactly]
+  count_wrong_pos = compare_with(a_arr, b_arr)[:count_wrong_pos]
   count_match_exactly == comparasion[0] && count_wrong_pos == comparasion[1]
 end

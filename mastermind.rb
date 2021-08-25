@@ -38,7 +38,9 @@ module Mastermind
       guess_code = @codebreaker.guess
 
       puts "#{codebreaker.name} guessed #{guess_code}"
-      (@codemaker.give_feedback guess_code) => {black_num:, white_num:}
+      # (@codemaker.give_feedback guess_code) => {black_num:, white_num:}
+      black_num = (@codemaker.give_feedback guess_code)[:black_num]
+      white_num = (@codemaker.give_feedback guess_code)[:white_num]
       puts "#{codemaker.name}'s feedback: B#{black_num}W#{white_num}"
       return 'found' if black_num == PEGS
 
@@ -97,7 +99,9 @@ module Mastermind
 
     def give_feedback(guess_code)
       # guess_code = game.last_guess
-      compare_with(secret_code.pegs, guess_code.pegs) => {count_match_exactly:, count_wrong_pos:}
+      # compare_with(secret_code.pegs, guess_code.pegs) => {count_match_exactly:, count_wrong_pos:}
+      count_match_exactly = compare_with(secret_code.pegs, guess_code.pegs)[:count_match_exactly]
+      count_wrong_pos = compare_with(secret_code.pegs, guess_code.pegs)[:count_wrong_pos]
       { black_num: count_match_exactly, white_num: count_wrong_pos }
     end
 
