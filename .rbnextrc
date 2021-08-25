@@ -3,4 +3,4 @@
 nextify: |
   --transpile-mode=rewrite
   --no-refine
-  --rewrite=pattern-matching
+  --min-version=2.5
