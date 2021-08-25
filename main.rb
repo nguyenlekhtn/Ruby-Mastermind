@@ -1,4 +1,4 @@
-require_relative 'mastermind'
+require_relative '.rbnext/mastermind'
 
 game = Mastermind::Game.new
 game.start
