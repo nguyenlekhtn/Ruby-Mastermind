@@ -1,6 +1,0 @@
-# ./.rbnextrc
-
-nextify: |
-  --transpile-mode=rewrite
-  --no-refine
-  --rewrite=pattern-matching
