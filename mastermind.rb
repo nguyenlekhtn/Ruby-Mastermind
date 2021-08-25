@@ -10,18 +10,13 @@ module Mastermind
   # Game of mastermind, init with number of pegs and number of colors correspondingly
   class Game
     def initialize
-      # @history = Array.new(TURNS) { { guess_code: nil, feedback: nil } }
       @history = []
       @current_turn = 0
-      # @codemaker = CodemakerAI.new
-      # @codebreaker = CodebreakerHuman.new
     end
 
     attr_reader :pegs, :colors, :codebreaker, :codemaker, :current_turn, :history
 
     def add_history(guess_code, black_num, white_num)
-      # @history[turn_i][:guess_code] = guess_code
-      # @history[turn_i][:feedback] = { black_num: black_num, white_num: white_num }
       @history << { guess_code: guess_code, feedback: { black_num: black_num, white_num: white_num } }
     end
 
@@ -160,8 +155,6 @@ module Mastermind
 
     def set_code
       Code.create_random_code
-      # @secret_code = Code.new(*%w[1 2 3 4])
-      # puts "Secret code: #{secret_code}"
     end
 
     # choice: Array, guess: Code
